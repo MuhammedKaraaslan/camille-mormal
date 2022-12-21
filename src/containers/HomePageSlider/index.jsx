@@ -197,7 +197,7 @@ const HomePageSlider = () => {
                     productImages.map((image, index) => (
                         <div className={`slide ${index === 0 ? 'active-slide' : ''}`} key={index}>
                             <div className="slide__content">
-                                <p>{index + 1}. Content</p>
+                                <p>The Regeneration Suit</p>
                             </div>
                             <img src={image} alt={`slide ${index}`} onMouseUp={mouseUp} onMouseDown={mouseDown} onMouseMove={mouseMove} />
                         </div>
