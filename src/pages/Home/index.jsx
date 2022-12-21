@@ -1,13 +1,13 @@
 import React from 'react'
 
-import LoadingSlider from '../../containers/LoadingSlider'
+import HomePageSlider from '../../containers/HomePageSlider'
 
 import './style.scss'
 
 const Home = () => {
   return (
-    <div>
-        <LoadingSlider />
+    <div id='home'>       
+        <HomePageSlider className="slider" />
     </div>
   )
 }

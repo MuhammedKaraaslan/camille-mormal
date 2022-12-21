@@ -1,6 +1,24 @@
-body {
-  box-sizing: border-box;
-  margin: 0;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
   padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  color: #fff;
   background-color: #141414;
+  font-family: "poppins", sans-serif;
+  line-height: 1.5;
+}
+
+a {
+  text-decoration: none;
+  color: unset;
+}
+
+ul, li{
+  padding: 0;
+  margin: 0;
 }

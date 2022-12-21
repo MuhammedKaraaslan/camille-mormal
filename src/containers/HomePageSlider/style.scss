@@ -1,0 +1,98 @@
+#slider-section {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    color: white;
+  }
+  
+  .slider {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    user-select: none;
+  
+    .slide {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      inset: 0;
+      transform: translateX(100%);
+  
+      &__content {
+        overflow: hidden;
+        z-index: 3;
+        font-size: 3.5rem;
+        text-transform: capitalize;
+      }
+  
+      img {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 100% center;
+        pointer-events: none;
+      }
+    }
+  
+    &__pagination {
+      overflow: hidden;
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      z-index: 3;
+    }
+  
+    .active-slide {
+      transform: translateX(0);
+    }
+  
+    .slider-button {
+      position: absolute;
+      z-index: 2;
+      width: 2.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  
+    .prev {
+      left: 15%;
+    }
+  
+    .next {
+      right: 15%;
+    }
+  }
+  
+  .thumbs {
+    overflow: hidden;
+    position: absolute;
+    bottom: 4%;
+    right: 3%;
+    width: 35%;
+    z-index: 7;
+    display: flex;
+    gap: 4px;
+    user-select: none;
+    transform: translate(0, -50%);
+  
+    &__slide{
+      opacity: 1;
+    }
+  
+    img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      object-position: 100% center;
+    }
+  }
+  
+
+  .slider-button, .slide__content, .slider__pagination{
+    opacity: 0;
+  }
