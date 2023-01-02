@@ -9,17 +9,17 @@ import './App.scss'
 
 function App() {
 
-  const [isAnimationEnd, setIsAnimationEnd] = useState(false);
+  const [isAnimationEnd, setIsAnimationEnd] = useState(true);
 
-  useEffect(() => {
-    setTimeout(() => {
-      setIsAnimationEnd(true);
-    }, 5001); //When loading animation end
-  }, []);
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     setIsAnimationEnd(true);
+  //   }, 5001); //When loading animation end
+  // }, []);
 
   return (
     <div className="app">
-      <LoadingSlider />
+      {/* <LoadingSlider /> */}
       {isAnimationEnd && <Home />}
     </div>
   );

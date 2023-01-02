@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 import gsap from 'gsap'
 
@@ -8,218 +8,274 @@ import './style.scss'
 
 const HomePageSlider = () => {
 
+    const mainSlider = useRef();
+    const prevSlider = useRef();
+    const sliderButtons = useRef([]);
+
     const [isFullScreen, setIsFullScreen] = useState(true);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [slideDirection, setSlideDirection] = useState(0); //Baslangicta 0 daha sonra hangi butona tiklandigina gore 1 veya -1 oluyor
+    const [previewActiveSlide, setPreviewActiveSlide] = useState();
+
+    const [isMainSliderAnimationActive, setIsMainSliderAnimationActive] = useState(false);
+    const [isChangeScreenToPreviewActive, setIsChangeScreenToPreviewActive] = useState(false);
+
+    useEffect(() => {
+        changeSlide();
+    }, [activeIndex])
 
     //Full screen slide animasyonları başlangıcı
-    let changeSlideTimeline = gsap.timeline();
+    const changeSlide = () => {
+        if (isMainSliderAnimationActive) { return; }
+        changeMainSlide();
+        changePreviewSlide();
+    }
 
-    const changeSlide = (event, index) => {
-        //Animasyon devam ediyorsa method tekrar çalışmaz. Bitmişse eski animasyonun değerleri gitsin diye clear edilir.
-        const { currentActiveSlide, offset, newActiveSlide, button } = changeActiveSlide(event, index);
+    const changeMainSlide = () => {
+        const { currentActiveSlide, newActiveSlide } = changeActiveSlide(mainSlider, 'main-active-slide');
+        const changeSlideTimeline = gsap.timeline();
+
+        // Slide bitmeden tekrar çalıştırılamaması için
+        setIsMainSliderAnimationActive(true);
+
+        setTimeout(() => {
+            setIsMainSliderAnimationActive(false);
+        }, "1500")
 
         //Slide animasyonu
-        changeSlideTimeline.fromTo(currentActiveSlide, { transform: "translateX(0%)" }, { transform: `${offset === 1 ? 'translateX(-80%)' : 'translateX(80%)'}`, duration: 1 });
-        changeSlideTimeline.fromTo(newActiveSlide, { transform: `${offset === 1 ? 'translateX(100%)' : 'translateX(-100%)'}` }, { transform: "translateX(0%)", duration: 1.5, ease: 'power3' }, '0');
-        changeSlideTimeline.set(currentActiveSlide, { transform: "translateX(100%)" }, '1.5');
+        changeSlideTimeline.fromTo(currentActiveSlide, { transform: "translateX(0%)", zIndex: '0' }, { transform: `${slideDirection === 1 ? 'translateX(-80%)' : 'translateX(80%)'}`, duration: slideDirection === 0 ? 0.01 : 1 });
+        changeSlideTimeline.fromTo(newActiveSlide, { transform: `${slideDirection === 1 ? 'translateX(100%)' : 'translateX(-100%)'}`, zIndex: '2' }, { transform: "translateX(0%)", duration: slideDirection === 0 ? 0.01 : 1.5, ease: 'power3' }, '0');
+        if (slideDirection !== 0) changeSlideTimeline.set(currentActiveSlide, { transform: "translateX(100%)" }, '1.5') // Eger daha once slide calismamissa direction 0
 
         //Prev Next butonları animasyonu
-        if (button) changeSlideTimeline.fromTo(button, { rotate: '0' }, { rotate: `${offset < 0 ? "-" : "+"}90deg` }, '0'); //Buton ile geldiyse bu animasyon çalışacak
+        changeSlideTimeline.fromTo(sliderButtons.current, { rotate: '0deg' }, { rotate: `${slideDirection < 0 ? "-" : "+"}90deg` }, '0'); //Buton ile geldiyse bu animasyon çalışacak
 
         //Yazı animasyonu
         let textTimeline = gsap.timeline();
-        textTimeline.fromTo(currentActiveSlide.querySelector('.slide__content p'), { transform: 'translateY(0)' }, { transform: 'translateY(-100%)', duration: .3 });
-        textTimeline.fromTo(newActiveSlide.querySelector('.slide__content p'), { transform: 'translateY(150%)' }, { transform: 'translateY(0%)', duration: .5 }, '.8');
+        textTimeline.fromTo(currentActiveSlide.querySelector('.slider-title'), { transform: 'translateY(0)' }, { transform: 'translateY(-100%)', duration: .3 });
+        textTimeline.fromTo(newActiveSlide.querySelector('.slider-title'), { transform: 'translateY(150%)' }, { transform: 'translateY(0%)', duration: .5 }, '1');
 
-    }
-
-    const changeActiveSlide = (event, index) => {
-        if (changeSlideTimeline.isActive()) { return; }
-        changeSlideTimeline.clear();
-
-        let button = event ? event.target : null; //Thumbs ile geldiyse buton null olacak
-        let offset = button ? (button.classList.contains("next") ? 1 : -1) : 1; //Thumbs ile geldiyse offset 1 olacak
-        const slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
-        const currentActiveSlide = slides.filter((slide) => { return slide.classList.contains("active-slide") })[0];
-        let newIndex = (index !== undefined) ? index : slides.indexOf(currentActiveSlide) + offset; //Thumbs ile geldiyse index alınacak değilse offset hesabı yapılacak
-
-        if (newIndex < 0) {
-            newIndex = slides.length - 1
-        }
-        if (newIndex >= slides.length) {
-            newIndex = 0
-        }
-
-        let newActiveSlide = slides[newIndex];
-        newActiveSlide.classList.add("active-slide")
-        currentActiveSlide && currentActiveSlide.classList.remove("active-slide");
-
-        //Aktif slide degistikten sonra sayfa numarasını gunceller
-        changePageNumber(offset, newIndex);
-        return { currentActiveSlide, offset, newActiveSlide, newIndex, button };
-    }
-
-    const changePageNumber = (offset, newIndex) => {
-        let pageTextTimeline = gsap.timeline();
-        let pageNumber = document.querySelector('.slider__pagination-page');
-        pageTextTimeline.fromTo(pageNumber, { display: 'inline-block', transform: 'translateY(0%)' }, { transform: `${offset === 1 ? 'translateY(-50%)' : 'translateY(50%)'}`, duration: .3 });
-        pageTextTimeline.fromTo(pageNumber, { display: 'inline-block', transform: `${offset === 1 ? 'translateY(100%)' : 'translateY(-100%)'}` }, { transform: 'translateY(0%)', duration: .6 });
+        //Sayfa numarası animasyonu
+        let timeline = gsap.timeline();
+        let pageNumber = document.querySelector('.pagination__active');
+        timeline.fromTo(pageNumber, { display: 'inline-block', transform: 'translateY(0%)' }, { transform: `${slideDirection === 1 ? 'translateY(-50%)' : 'translateY(50%)'}`, duration: .3 });
+        timeline.fromTo(pageNumber, { display: 'inline-block', transform: `${slideDirection === 1 ? 'translateY(100%)' : 'translateY(-100%)'}` }, { transform: 'translateY(0%)', duration: .3 });
         // Eski sayfa numarası ekrandan gidince sayfa numarası artıyor
         setTimeout(() => {
-            pageNumber.innerHTML = newIndex + 1;
-        }, "500")
+            pageNumber.innerHTML = activeIndex + 1;
+        }, "300")
+
+    }
+
+    const changePreviewSlide = () => {
+        setPreviewActiveSlide(changeActiveSlide(prevSlider, 'preview-active-slide').newActiveSlide);
+        const imageWidth = document.querySelector('.preview-slider-image').offsetWidth;
+        let offset = (imageWidth * activeIndex) + (imageWidth / 2) + (40 * activeIndex)
+        onMouseMove(null, offset);
+    }
+
+    const changeActiveSlide = (slider, className) => {
+        const slides = Array.prototype.slice.call(slider.current.children);
+
+        const currentActiveSlide = slides.filter((slide) => { return slide.classList.contains(className) })[0];
+        currentActiveSlide.classList.remove(className);
+
+        let newActiveSlide = slides[activeIndex];
+        newActiveSlide.classList.add(className)
+
+        return { currentActiveSlide, newActiveSlide };
     }
     //Full screen slide animasyonları bitişi
 
+    //PREVIEW SLIDER ANIMASYONU BASLANGICI
+    //Eger fullscreen de bir degisiklik yapilmissa e degeri null donecek. Eger preview ekraninda mouse drag veya mouse wheel yapilmissa offset null donecek.
+    const onMouseMove = (e, offset) => {
+        let mouseDelta;
+        if (offset != null) {
+            mouseDelta = offset
+        } else {
+            if (prevSlider.current.dataset.mouseDownAt === "0" && e._reactName !== 'onWheel') return;
+            mouseDelta = e._reactName === "onWheel" ? (Math.sign(e.deltaY) === 1 ? 50 : -50) : parseFloat(prevSlider.current.dataset.mouseDownAt) - e.clientX;  // Mouse'un ilk tıklandığı yer - mouse sürüklendikçe gittiği konum
+        }
+        const maxDelta = window.innerWidth; //Maximum gidebileceği yer ekranın yarısı kadar
+
+        const percentage = (mouseDelta / maxDelta) * -100;
+
+        let nextPercentageUnconstrained = parseFloat(prevSlider.current.dataset.prevPercentage) + percentage;
+
+        if (offset != null) nextPercentageUnconstrained = percentage;
+
+        let nextPercentage = Math.max(Math.min(nextPercentageUnconstrained, 0), -150);
+
+        prevSlider.current.dataset.percentage = nextPercentage;
+        //Eğer wheel ise prevPercentage burada set ediliyor böylece wheel sonrası drag ile işlem yapılırsa prevSlider.current kaldığı yerden devam ediyor. 
+        //Aksi takdirde prevPercentage wheel animasyonunda hiç set edilmiyor ve sürekli 0 kalıyor
+        e && e._reactName === "onWheel" && (prevSlider.current.dataset.prevPercentage = prevSlider.current.dataset.percentage);
+        offset && (prevSlider.current.dataset.prevPercentage = prevSlider.current.dataset.percentage)
+
+        const mouseMoveTimeline = gsap.timeline();
+
+        mouseMoveTimeline.to(prevSlider.current, { transform: `translate(${50 + nextPercentage}%, 0%)`, duration: 1 })
+        mouseMoveTimeline.to(document.querySelectorAll('.preview-slider-image'), { objectPosition: `${50 + nextPercentage / 3}% center`, duration: 1 }, '0')
+
+    }
+
+    const onMouseDown = (e) => {
+        prevSlider.current.dataset.mouseDownAt = e.clientX
+    }
+
+    const onMouseUp = () => {
+        prevSlider.current.dataset.mouseDownAt = "0";
+        prevSlider.current.dataset.prevPercentage = prevSlider.current.dataset.percentage;
+    }
+    //PREVIEW SLIDER ANIMASYONU BASLANGICI
 
     const changeScreenToPreview = () => {
         if (!isFullScreen) return;
-        const slider = document.getElementById('slider');
-        const thumbs = document.getElementById('thumbs');
-        document.querySelector('.active-slide').style.cssText = null;
-        document.querySelector('.active-slide').classList.remove('active-slide');
+        // Preview ekranina gecis bitmeden full ekrana donus olmaması için
+        setIsChangeScreenToPreviewActive(true);
 
-        //Thumbs'in onceden kalan degerleri varsa sifilamak icin
-        animateTumbsAndImages(thumbs, 1, 0);
-
-        const timeline = gsap.timeline();
-        slider.style.display = 'none';
-        timeline.fromTo(thumbs, { gap: '0 4vmin', }, { width: 'max-content', height: 'fit-content', display: 'flex', position: 'absolute', left: '50%', top: '50%', transform: 'translate(0%, -50%)', duration: '1' });
-        timeline.to(document.getElementsByClassName('thumbs__slide'), { width: '40vmin', height: '56vmin', duration: '1' }, '0');
-
-        document.querySelector('.slider__pagination').style.display = 'none';
-        document.querySelectorAll('.slider-button').forEach(content => content.style.display = 'none')
-        document.querySelectorAll('.slide__content').forEach(content => content.style.display = 'none')
-
+        setTimeout(() => {
+            setIsChangeScreenToPreviewActive(false);
+        }, "1500")
         setIsFullScreen(false);
-    }
 
-    const changeScreenToFull = (event, index) => {
-        if (isFullScreen) return;
-        // Full screen'e donerken yeni bir aktif slide oluşturur ve sayfa numarasını buna gore gunceller
-        changeActiveSlide(event, index);
+        const prevWith = document.querySelector('.preview-slider-image').getBoundingClientRect().width
+        const prevHeight = document.querySelector('.preview-slider-image').getBoundingClientRect().height
+        const prevPosition = document.querySelector('.preview-slider-image').style.objectPosition
 
-        const slider = document.getElementById('slider');
-        const thumbs = document.getElementById('thumbs');
-
-        slider.style.display = 'flex';
-        document.querySelector('.slider__pagination').style.display = 'flex';
-        document.querySelectorAll('.slider-button').forEach(content => content.style.display = 'flex')
-
-        //Thumbs'in onceden kalan degerleri varsa sifilamak icin
-        animateTumbsAndImages(thumbs, 1, 0);
-        thumbs.dataset.prevPercentage = 0
-        thumbs.dataset.percentage = 0
 
         const timeline = gsap.timeline();
+        timeline
+            .fromTo(document.querySelector('.main-active-slide .slider-title'), { transform: 'translateY(0)' }, { transform: 'translateY(-100%)', duration: .3 })
+            .fromTo(document.querySelectorAll('.main-slider__item img'), { objectPosition: prevPosition, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
+                { width: `${prevWith}px`, height: `${prevHeight}px`, duration: .5 }, '0')
+            .set(previewActiveSlide, { opacity: 1 })
+            .set(mainSlider.current, { display: 'none' })
+            .to(document.querySelectorAll('.preview-slider__item'), { opacity: 1, duration: 1.5, ease: 'none' })
 
-        timeline.fromTo(document.querySelector('.active-slide'), { left: '50%', top: '50%', width: '0', height: '0' }, { left: '0', top: '0', width: '100vw', height: '100vh', duration: '1' }, '0');
-        timeline.fromTo(document.querySelectorAll('.slide__content'), { display: 'flex', opacity: 0 }, { opacity: 1, duration: '1.2' }, '0');
 
-        //timeline.fromTo(thumbs, { gap: '4px' }, {  height: 'initial', position: 'absolute', duration: '1' }, '0');
-        //Preview ekrani icin eklenen ek css ozellikleri silindi
-        thumbs.style.cssText = null;
-        document.querySelectorAll('.thumbs__slide').forEach((thumbsSlide, index) => {
+        document.querySelectorAll('.thumbs-slider__item').forEach((thumbsSlide, index) => {
             thumbsSlide.style.cssText = null
-            timeline.fromTo(thumbsSlide, { transform: 'translateY(150%)' }, { transform: 'translateY(0)', duration: `${(index + 5) / 10}` }, '0.3');
-        });
-        document.querySelectorAll('.slide').forEach((slide) => {
-            slide.style.cssText = null
-        });
+            gsap.timeline().to(thumbsSlide, { transform: 'translateY(200%)', opacity: '0', duration: `${(index) / 5}`, ease: 'power2' }, '0.1');
+        })
 
-        setIsFullScreen(true);
+
+        gsap.timeline().to([document.querySelector('.slider-buttons'), document.querySelector('.pagination')], { display: 'none' });
+
     }
 
-    //Preview Ekranında Slider Animasyonu Başlangıcı
-    const thumbs = document.getElementById("thumbs");
-    const mouseDown = (e) => {
-        if (isFullScreen) return;
-        thumbs.dataset.mouseDownAt = e.clientX;
+    const changeScreenToFull = (index) => {
+        if (isFullScreen || isChangeScreenToPreviewActive) return;
+        setIsFullScreen(true)
+        setActiveIndex(index);
+        changeActiveSlide(mainSlider, 'main-active-slide');
+
+        gsap.timeline().fromTo(document.querySelectorAll('.preview-slider__item'), { opacity: 1 }, { opacity: 0, duration: 0.1 })
+
+        document.querySelectorAll('.thumbs-slider__item').forEach((thumbsSlide, index) => {
+            thumbsSlide.style.cssText = null
+            gsap.timeline().to(thumbsSlide, { transform: 'translateY(0)', opacity: '1', duration: `${(index) / 5}`, ease: 'power2' }, '0.1');
+        })
+
+        gsap.timeline().to([document.querySelector('.slider-buttons'), document.querySelector('.pagination')], { display: 'flex' });
+
+
+        gsap.set(document.querySelectorAll('.main-slider__item'), { width: '100vw', height: '100vh' })
+
+        mainSlider.current.style.cssText = null
+        const timeline = gsap.timeline();
+        timeline
+            .fromTo(document.querySelectorAll('.main-slider__item img'), { objectPosition: 'center center', top: '50%', left: '50%', right: '50%', bottom: '50%', transform: 'translate(0)' },
+                { top: '0', left: '0', right: '0', bottom: '0', width: '100%', height: '100%', duration: .5 })
+            .fromTo(document.querySelector('.main-active-slide .slider-title'), { transform: 'translateY(100%)' }, { transform: 'translateY(0%)', duration: .3 })
+
     }
 
-    const mouseMove = (e) => {
-        //(Ekran full'se || mouse ile drag bittiyse) && wheel değilse
-        if ((isFullScreen || thumbs.dataset.mouseDownAt === "0") && e._reactName !== 'onWheel') return;
-        // Eğer wheel ise wheel yönüne bakılır. Wheel yönü 1 ise 20 değilse -20 set edilir. Eğer wheel değil mouse ise mouse'un ilk tıklandığı ve bırakıldığı yer arası alınır.
-        const mouseDelta = e._reactName === "onWheel" ? (Math.sign(e.deltaY) === 1 ? 20 : -20) : (parseFloat(thumbs.dataset.mouseDownAt) - e.clientX);
-        const maxDelta = window.innerWidth / 2;
-        const percentage = (mouseDelta / maxDelta) * -50;
-        const nextPercentageUnconstrained = parseFloat(thumbs.dataset.prevPercentage) + percentage;
-        const nextPercentage = Math.max(Math.min(nextPercentageUnconstrained, 0), -100);
-        thumbs.dataset.percentage = nextPercentage;
-        //Eğer wheel ise prevPercentage burada set ediliyor böylece wheel sonrası drag ile işlem yapılırsa thumbs kaldığı yerden devam ediyor. 
-        //Aksi takdirde prevPercentage wheel animasyonunda hiç set edilmiyor ve sürekli 0 kalıyor
-        e._reactName === "onWheel" && (thumbs.dataset.prevPercentage = thumbs.dataset.percentage);
 
-        animateTumbsAndImages(thumbs, 1200, nextPercentage)
-    }
-
-    const animateTumbsAndImages = (thumbs, duration, translatePercentage) => {
-        thumbs.animate({
-            transform: `translate(${translatePercentage}%, -50%)`
-        }, {
-            duration: Number(duration),
-            fill: "forwards"
-        });
-
-        for (const image of thumbs.querySelectorAll(".thumbs__slide img")) {
-            image.animate({
-                objectPosition: `${100 + translatePercentage}% center`
-            }, {
-                duration: Number(duration),
-                fill: "forwards"
-            });
+    const handleSlideButtonClick = (buttonTitle) => {
+        if (isMainSliderAnimationActive) { return; }
+        if (buttonTitle === 'prev') {
+            setActiveIndex(activeIndex === 0 ? mainSlider.current.childNodes.length - 1 : activeIndex - 1);
+            setSlideDirection(-1);
+        }
+        else {
+            setActiveIndex(activeIndex === mainSlider.current.childNodes.length - 1 ? 0 : activeIndex + 1);
+            setSlideDirection(1);
         }
     }
-    const mouseUp = () => {
-        if (isFullScreen) return;
-        thumbs.dataset.mouseDownAt = "0";
-        thumbs.dataset.prevPercentage = thumbs.dataset.percentage;
+
+    const handleThumbsSlideClick = (index) => {
+        if (isMainSliderAnimationActive) { return; }
+        activeIndex > index ? setSlideDirection(-1) : setSlideDirection(1); setActiveIndex(index)
     }
-    //Preview Ekranında Slider Animasyonu Bitişi
-
-
-    useEffect(() => {
-        const timeline = gsap.timeline();
-        timeline.fromTo(document.querySelectorAll('.slider-button'), { opacity: '0' }, { opacity: '1', duration: 2, esase: 'none' });
-        timeline.fromTo(document.querySelectorAll('.slide__content'), { opacity: '0' }, { opacity: '1', duration: 2, esase: 'none' }, '0');
-        timeline.fromTo(document.querySelectorAll('.slider__pagination'), { opacity: '0' }, { opacity: '1', duration: 2, esase: 'none' }, '0');
-        document.querySelectorAll('.thumbs__slide').forEach((thumbsSlide, index) => {
-            thumbsSlide.style.cssText = null
-            timeline.fromTo(thumbsSlide, { transform: 'translateY(150%)' }, { transform: 'translateY(0)', duration: `${(index + 5) / 10}` }, '0');
-        });
-    }, [])
 
 
     return (
-        <div id='slider-section' onWheel={isFullScreen ? changeScreenToPreview : mouseMove} onMouseUp={mouseUp} onMouseDown={mouseDown} onMouseMove={mouseMove}>
-            <div id='slider' className="slider" >
-                {
-                    productImages.map((image, index) => (
-                        <div className={`slide ${index === 0 ? 'active-slide' : ''}`} key={index}>
-                            <div className="slide__content">
-                                <p>The Regeneration Suit</p>
-                            </div>
-                            <img src={image} alt={`slide ${index}`} onMouseUp={mouseUp} onMouseDown={mouseDown} onMouseMove={mouseMove} />
-                        </div>
-                    ))
-                }
+        <div id='slider-section'
+            onWheel={isFullScreen ? changeScreenToPreview : onMouseMove} onMouseMove={isFullScreen ? undefined : onMouseMove}
+            onMouseDown={isFullScreen ? undefined : onMouseDown} onMouseUp={isFullScreen ? undefined : onMouseUp}>
+            <div id="slider" className="slider">
 
-                <img src={sliderButton} alt="prev" className='slider-button prev' onClick={(event) => changeSlide(event)} />
-                <img src={sliderButton} alt="next" className='slider-button next' onClick={(event) => changeSlide(event)} />
-                <div className='slider__pagination'>
-                    <span className='slider__pagination-page'>1</span>
-                    <span> - 8</span>
+                {/* SLIDER BUTTONS */}
+                <div className="slider-buttons">
+                    <img className='slider-button prev' ref={(element) => { sliderButtons.current[0] = element }} src={sliderButton} alt="prev" onClick={() => { handleSlideButtonClick('prev') }} />
+                    <img className='slider-button next' ref={(element) => { sliderButtons.current[1] = element }} src={sliderButton} alt="next" onClick={() => { handleSlideButtonClick('next') }} />
                 </div>
-            </div>
 
-            <div id='thumbs' className="thumbs" data-mouse-down-at="0" data-prev-percentage="0">
-                {
-                    productImages.map((image, index) => (
-                        <div className="thumbs__slide" key={index} onClick={isFullScreen ? () => changeSlide(null, index) : () => changeScreenToFull(null, index)}>
-                            <img src={image} alt={`thumbs ${index}`} />
-                        </div>
-                    ))
-                }
+                {/* MAIN SLIDER */}
+                <div id="main-slider" className="main-slider" ref={mainSlider}>
+                    {
+                        productImages.map((image, index) => (
+                            <div className={`main-slider__item ${index === 0 && 'main-active-slide'}`} key={index}>
+                                <img className='slider-image' src={image} alt="brand bg" />
+                                <div className="slider-content">
+                                    <div className="slider-title-wrapper">
+                                        <p className="slider-title">The Regeneration Suite</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+
+                {/* MENU */}
+                <div className="menu">
+                    <a href="/localhost:3000">Work</a>
+                    <a href="/localhost:3000">About</a>
+                </div>
+
+                {/* PREVIEW SLIDER */}
+                <div id='preview-slider' className="preview-slider" ref={prevSlider} data-mouse-down-at="0" data-percentage="0" data-prev-percentage="0" >
+                    {
+                        productImages.map((image, index) => (
+                            <div className={`preview-slider__item ${index === 0 && 'preview-active-slide'}`}
+                                key={index}
+                                onClick={() => changeScreenToFull(index)}>
+                                <img className='preview-slider-image' src={image} alt="preview brand" />
+                            </div>
+                        ))
+                    }
+                </div>
+
+                {/* BOTTOM */}
+                <div className="bottom">
+                    <span className='bottom-column'></span>
+                    <div className='pagination'>
+                        <span className="pagination__active">1</span>
+                        <div className="pagination__line"></div>
+                        <span className='pagination__total'>8</span>
+                    </div>
+                    <div className="thumbs-slider bottom-column">
+                        {
+                            productImages.map((image, index) => (
+                                <div className="thumbs-slider__item" key={index} onClick={() => { handleThumbsSlideClick(index) }}>
+                                    <img src={image} alt="thumbs brand" />
+                                </div>
+                            ))
+                        }
+                    </div>
+                </div>
             </div>
         </div>
     )
