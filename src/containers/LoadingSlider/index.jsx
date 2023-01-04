@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react'
 
+import gsap from 'gsap'
+
 import LoaderColumn from '../../components/LoaderColumn'
 
-import { firstColumn, secondColumn, thirdColumn, fourthColumn, fifthColumn } from '../../assets/index'
+import { loadAnimationImages } from '../../assets/index'
 
 import './style.scss'
-import gsap from 'gsap'
 
 const LoadingSlider = () => {
 
@@ -48,11 +49,11 @@ const LoadingSlider = () => {
   return (
     <div className='loader'>
       <div className="loader__flex">
-        <LoaderColumn columnList={firstColumn} innerClassName='edge-column' />
-        <LoaderColumn columnList={secondColumn} innerClassName='reverse-column' loaderClassName="inner-bottom" />
-        <LoaderColumn columnList={thirdColumn} innerClassName='center-column' mainImage={true} />
-        <LoaderColumn columnList={fourthColumn} innerClassName='reverse-column' loaderClassName="inner-bottom" />
-        <LoaderColumn columnList={fifthColumn} innerClassName='edge-column' />
+        <LoaderColumn columnList={loadAnimationImages.firstColumn} innerClassName='edge-column' />
+        <LoaderColumn columnList={loadAnimationImages.secondColumn} innerClassName='reverse-column' loaderClassName="inner-bottom" />
+        <LoaderColumn columnList={loadAnimationImages.thirdColumn} innerClassName='center-column' mainImage={true} />
+        <LoaderColumn columnList={loadAnimationImages.fourthColumn} innerClassName='reverse-column' loaderClassName="inner-bottom" />
+        <LoaderColumn columnList={loadAnimationImages.fifthColumn} innerClassName='edge-column' />
       </div>
     </div>
   )

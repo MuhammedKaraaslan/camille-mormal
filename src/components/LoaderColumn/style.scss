@@ -3,6 +3,7 @@
   flex-direction: column;
   justify-content: flex-start;
   padding: 0 7vh;
+  z-index: 9999;
 
   &__inner {
     display: flex;

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 
 import gsap from 'gsap'
 
-import { sliderButton, productImages } from '../../assets'
+import { sliderButton, mainSliderItems } from '../../assets'
 
 import './style.scss'
 
@@ -52,8 +52,10 @@ const HomePageSlider = () => {
 
         //Yazı animasyonu
         let textTimeline = gsap.timeline();
-        textTimeline.fromTo(currentActiveSlide.querySelector('.slider-title'), { transform: 'translateY(0)' }, { transform: 'translateY(-100%)', duration: .3 });
-        textTimeline.fromTo(newActiveSlide.querySelector('.slider-title'), { transform: 'translateY(150%)' }, { transform: 'translateY(0%)', duration: .5 }, '1');
+        if (slideDirection !== 0) {
+            textTimeline.fromTo(currentActiveSlide.querySelector('.slider-title'), { transform: 'translateY(0)' }, { transform: 'translateY(-100%)', duration: .3 });
+            textTimeline.fromTo(newActiveSlide.querySelector('.slider-title'), { transform: 'translateY(150%)' }, { transform: 'translateY(0%)', duration: .5 }, '1');
+        }
 
         //Sayfa numarası animasyonu
         let timeline = gsap.timeline();
@@ -139,6 +141,7 @@ const HomePageSlider = () => {
             setIsChangeScreenToPreviewActive(false);
         }, "1500")
         setIsFullScreen(false);
+
 
         const prevWith = document.querySelector('.preview-slider-image').getBoundingClientRect().width
         const prevHeight = document.querySelector('.preview-slider-image').getBoundingClientRect().height
@@ -226,13 +229,13 @@ const HomePageSlider = () => {
                 {/* MAIN SLIDER */}
                 <div id="main-slider" className="main-slider" ref={mainSlider}>
                     {
-                        productImages.map((image, index) => (
-                            <div className={`main-slider__item ${index === 0 && 'main-active-slide'}`} key={index}>
-                                <img className='slider-image' src={image} alt="brand bg" />
+                        mainSliderItems.map((item, index) => (
+                            <div className={`main-slider__item ${index === 0 && 'main-active-slide'}`} key={item.id}>
+                                <img className='slider-image' src={item.image} alt="brand bg" />
                                 <div className="slider-content">
-                                    <div className="slider-title-wrapper">
-                                        <p className="slider-title">The Regeneration Suite</p>
-                                    </div>
+                                    <a className="slider-title-wrapper" href={item.link}>
+                                        <p className="slider-title">{item.title}</p>
+                                    </a>
                                 </div>
                             </div>
                         ))
@@ -248,11 +251,11 @@ const HomePageSlider = () => {
                 {/* PREVIEW SLIDER */}
                 <div id='preview-slider' className="preview-slider" ref={prevSlider} data-mouse-down-at="0" data-percentage="0" data-prev-percentage="0" >
                     {
-                        productImages.map((image, index) => (
+                        mainSliderItems.map((item, index) => (
                             <div className={`preview-slider__item ${index === 0 && 'preview-active-slide'}`}
-                                key={index}
+                                key={item.id}
                                 onClick={() => changeScreenToFull(index)}>
-                                <img className='preview-slider-image' src={image} alt="preview brand" />
+                                <img className='preview-slider-image' src={item.image} alt="preview brand" />
                             </div>
                         ))
                     }
@@ -268,9 +271,9 @@ const HomePageSlider = () => {
                     </div>
                     <div className="thumbs-slider bottom-column">
                         {
-                            productImages.map((image, index) => (
-                                <div className="thumbs-slider__item" key={index} onClick={() => { handleThumbsSlideClick(index) }}>
-                                    <img src={image} alt="thumbs brand" />
+                            mainSliderItems.map((item, index) => (
+                                <div className="thumbs-slider__item" key={item.id} onClick={() => { handleThumbsSlideClick(index) }}>
+                                    <img src={item.image} alt="thumbs brand" />
                                 </div>
                             ))
                         }

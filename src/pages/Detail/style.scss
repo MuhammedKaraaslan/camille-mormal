@@ -1,4 +1,6 @@
 .main-wrapper {
+    user-select: none;
+    pointer-events: none;
 
     .container {
       padding: 3rem 2.3rem;
@@ -100,6 +102,7 @@
           width: 4em;
           position: sticky;
           top: 2rem;
+          pointer-events: all;
   
           &__images-list {
             &__item {

@@ -1,5 +1,6 @@
 #slider-section {
   overflow: hidden;
+  user-select: none;
 
   .slider {
     display: flex;

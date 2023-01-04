@@ -1,16 +1,13 @@
 import React, { useEffect } from 'react'
 
-import { useNavigate } from 'react-router';
-
-
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
-import Observer from 'gsap/Observer';
+// import Observer from 'gsap/Observer';
 
 import './style.scss'
 
 
-const Detail = ({ pageImages, nextPageUrl }) => {
+const Detail = ({ brand, nextPageUrl, nextPageImage, currentBrandIndex, totalBrandsIndex }) => {
 
   const changePage = () => {
     document.querySelector('.next-page__link').click();
@@ -24,17 +21,17 @@ const Detail = ({ pageImages, nextPageUrl }) => {
   }, [])
   
 
-  const createObserver = () => {
-    Observer.create({
-      target: window,
-      type: 'pointer',
-      onChangeY: (self) => {
-        let delta = self.deltaY * -1;
-        let scrollDistance = window.scrollY + delta;
-        window.scrollTo(0, scrollDistance);
-      }
-    })
-  }
+  // const createObserver = () => {
+  //   Observer.create({
+  //     target: window,
+  //     type: 'pointer',
+  //     onChangeY: (self) => {
+  //       let delta = self.deltaY * -2;
+  //       let scrollDistance = window.scrollY + delta;
+  //       window.scrollTo(0, scrollDistance);
+  //     }
+  //   })
+  // }
 
   //Image section'ın yan tarafinda olan preview goruntusu animasyonu
   const animateSidebarImage = () => {
@@ -77,14 +74,15 @@ const Detail = ({ pageImages, nextPageUrl }) => {
 
 
   useEffect(() => {
-    gsap.registerPlugin(Observer, ScrollTrigger);
+    // gsap.registerPlugin(Observer, ScrollTrigger);
+    gsap.registerPlugin(ScrollTrigger);
 
-    createObserver();
+    // createObserver();
 
     animateSidebarImage();
 
     animatePageEndImage();
-  }, [])
+  })
 
 
   return (
@@ -97,23 +95,23 @@ const Detail = ({ pageImages, nextPageUrl }) => {
               <div className="hero-content__top">
                 <div className="hero-info">
                   <div className="hero-info__headline">
-                    <h1>A Restorative & Immersive Experience</h1>
+                    <h1>{brand.headline}</h1>
                   </div>
                   <div className="hero-info__project-number">
-                    <p className='current-project'>1</p>
+                    <p className='current-project'>{currentBrandIndex}</p>
                     <div className="hero-project-number-line"></div>
-                    <p className='total-projects'>1</p>
+                    <p className='total-projects'>{totalBrandsIndex}</p>
                   </div>
                 </div>
-                <p className="hero-sub-head">Lead Designer</p>
-                <p className="hero-description">To celebrate 100 years of Gucci, we partnered with The Savoy to create an immersive experience that honours</p>
-                <p className="hero-done-with">Done With <br /> AKQA Amsterdam</p>
+                <p className="hero-sub-head">{brand.subHead}</p>
+                <p className="hero-description">{brand.description}</p>
+                <p className="hero-done-with">Done With <br /> {brand.doneWith}</p>
               </div>
               <p className="scroll-down">Scroll Down</p>
             </div>
           </div>
 
-          <img className="hero__bg" src={pageImages.hero} alt="gucci hero" />
+          <img className="hero__bg" src={brand.images.hero} alt="gucci hero" />
 
         </section>
 
@@ -124,7 +122,7 @@ const Detail = ({ pageImages, nextPageUrl }) => {
             <div className="main-images">
               <div className="main-images__list">
                 {
-                  pageImages.section.map((image, index) => (
+                  brand.images.section.map((image, index) => (
                     <div key={index} id={`mainImage${index}`} className="main-images__list__item">
                       <img src={image} alt="brand" />
                     </div>
@@ -136,7 +134,7 @@ const Detail = ({ pageImages, nextPageUrl }) => {
             <div className="column">
               <div className="column__images-list">
                 {
-                  pageImages.section.map((image, index) => (
+                  brand.images.section.map((image, index) => (
                     <div key={index} className="column__images-list__item">
                       <a href={`#mainImage${index}`}>
                         <img src={image} alt="brand" />
@@ -164,7 +162,7 @@ const Detail = ({ pageImages, nextPageUrl }) => {
             <a className='next-page__link' href={`/${nextPageUrl}`} >Next Project</a>
           </div>
 
-          <img className='next-page__image' src={pageImages.next} alt="Next page" />
+          <img className='next-page__image' src={nextPageImage} alt="Next page" />
         </section>
 
         <div className="empty"></div>
